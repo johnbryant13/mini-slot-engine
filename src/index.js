@@ -1,24 +1,48 @@
+const readline = require("readline-sync");
 const { Player, spin } = require("./engine/gameEngine");
 
-const NUM_SPINS = 100000;  // simulate 100k spins
-const BET = 1;              // 1 unit per spin
+// Create a player with starting balance
+const player = new Player(100);
 
-let totalBet = 0;
-let totalWin = 0;
+console.log("🎰 Welcome to Mini Slot Machine!");
+console.log("Type 'q' to quit.\n");
 
-// Player needs enough balance for all spins in the simulation
-const player = new Player(NUM_SPINS * BET);
+while (true) {
+  console.log(`Balance: ${player.balance.toFixed(2)}`);
 
-for (let i = 0; i < NUM_SPINS; i++) {
-  const result = spin(player, BET);
-  totalBet += result.bet;
-  totalWin += result.win;
+  // Ask for bet
+  let input = readline.question("Enter bet amount (or 'q' to quit): ");
+  if (input.toLowerCase() === "q") break;
+
+  const bet = parseFloat(input);
+  if (isNaN(bet) || bet <= 0) {
+    console.log("❌ Invalid bet. Try again.\n");
+    continue;
+  }
+
+  if (bet > player.balance) {
+    console.log("❌ Insufficient balance. Try again.\n");
+    continue;
+  }
+
+  // Spin the slot
+  const result = spin(player, bet);
+
+  // Show symbols
+  console.log("Spun: " + result.symbols.join(" | "));
+  if (result.win > 0) {
+    console.log(`🎉 You won: ${result.win.toFixed(2)}!`);
+  } else {
+    console.log("No win this time. 😢");
+  }
+
+  console.log("---------------------------\n");
+
+  // Stop if player is broke
+  if (player.balance <= 0) {
+    console.log("💀 You are out of balance. Game over!");
+    break;
+  }
 }
 
-// Calculate RTP
-const rtp = (totalWin / totalBet) * 100;
-
-console.log(`Simulated ${NUM_SPINS} spins`);
-console.log(`Total Bet: ${totalBet}`);
-console.log(`Total Win: ${totalWin}`);
-console.log(`Estimated RTP: ${rtp.toFixed(2)}%`);
+console.log("Thanks for playing! Goodbye!");
