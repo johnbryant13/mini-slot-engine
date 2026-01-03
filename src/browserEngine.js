@@ -1,4 +1,6 @@
 // browserEngine.js
+const spinSound = new Audio("spin.mp3");
+const winSound = new Audio("win.mp3");
 
 // SYMBOLS
 const SYMBOLS = { CHERRY: "CHERRY", LEMON: "LEMON", BAR: "BAR" };
@@ -58,12 +60,64 @@ spinBtn.addEventListener("click", () => {
     alert("Invalid bet or insufficient balance!");
     return;
   }
-  const result = spin(player, bet);
-  reelsEl.textContent = result.symbols.join(" | ");
-  winEl.textContent = result.win > 0 ? `🎉 You won: ${result.win}!` : "No win this time 😢";
-  balanceEl.textContent = result.balance.toFixed(2);
-  if (player.balance <= 0) {
+
+  spinBtn.disabled = true; // prevent multiple clicks
+
+spinWithAnimation(player, bet, (symbols, win, balance) => {
+  // Highlight winning symbols
+  reelsEl.innerHTML = symbols
+    .map(s => {
+      if (win > 0 && s === symbols[0]) {
+        return `<span style="color: gold; font-weight: bold;">${s}</span>`;
+      }
+      return s;
+    })
+    .join(" | ");
+
+  winEl.textContent = win > 0 ? `🎉 You won: ${win}!` : "No win this time 😢";
+  balanceEl.textContent = balance.toFixed(2);
+
+  // Re-enable spin button if player still has balance
+  if (balance > 0) {
+    spinBtn.disabled = false;
+  } else {
     alert("💀 You are out of balance. Game over!");
-    spinBtn.disabled = true;
   }
 });
+
+
+});
+
+
+function spinWithAnimation(player, bet, callback) {
+  const actualBet = player.placeBet(bet);
+  let win = 0;
+
+  // Start spin sound
+  spinSound.currentTime = 0;
+  spinSound.play();
+
+  const symbolsCount = REELS.length;
+  const spinDuration = 1000;
+  const intervalTime = 100;
+  let elapsed = 0;
+
+  const interval = setInterval(() => {
+    const animSymbols = REELS.map(reel => reel[getRandomInt(0, reel.length)]);
+    callback(animSymbols, 0, player.balance);
+    elapsed += intervalTime;
+
+    if (elapsed >= spinDuration) {
+      clearInterval(interval);
+      const finalSymbols = spinReels();
+      win = calculatePayout(finalSymbols, actualBet);
+      if (win > 0) {
+        player.addWin(win);
+        winSound.currentTime = 0;
+        winSound.play(); // play win sound
+      }
+      callback(finalSymbols, win, player.balance);
+    }
+  }, intervalTime);
+}
+
