@@ -7,10 +7,12 @@ const { SYMBOLS } = require("./reels");
  * Multiplier is applied to the bet
  */
 const PAYOUT_TABLE = {
-  [SYMBOLS.CHERRY]: 5,
+  [SYMBOLS.CHERRY]: 4.8,
   [SYMBOLS.LEMON]: 3,
-  [SYMBOLS.BAR]: 10,
+  [SYMBOLS.BAR]: 19,
 };
+
+
 
 /**
  * Evaluates the spin result and returns win amount
