@@ -1,59 +1,16 @@
-// Weighted symbols
-const SYMBOLS = ["CHERRY", "LEMON", "BAR"];
-const SYMBOL_WEIGHTS = { CHERRY: 5, LEMON: 4, BAR: 1 };
-const SYMBOL_POOL = Object.entries(SYMBOL_WEIGHTS).flatMap(([s, w]) => Array(w).fill(s));
-
-// Paylines
-const PAYLINES = [
-  [0,0,0],
-  [1,1,1],
-  [2,2,2],
-  [0,1,2],
-  [2,1,0]
-];
-
-const PAYOUTS = { CHERRY: 0.5, LEMON: 1, BAR: 3 };
-
-let balance = 100;
-
-const gridEl = document.getElementById("grid");
 const spinBtn = document.getElementById("spinBtn");
+const betInput = document.getElementById("bet");
 const balanceEl = document.getElementById("balance");
 const messagesEl = document.getElementById("messages");
-const betInput = document.getElementById("bet");
+const gridEl = document.getElementById("grid");
 
-function spinGrid(rows=3, reels=3) {
-  const grid = [];
-  for (let r=0; r<rows; r++){
-    const rowSymbols = [];
-    for (let c=0; c<reels; c++){
-      const randomIndex = Math.floor(Math.random()*SYMBOL_POOL.length);
-      rowSymbols.push(SYMBOL_POOL[randomIndex]);
-    }
-    grid.push(rowSymbols);
-  }
-  return grid;
-}
-
-function getPaylineSymbols(grid, payline) {
-  return payline.map((row, col) => grid[row][col]);
-}
-
-function isWinningLine(symbols) {
-  return symbols.every(s => s === symbols[0]);
-}
-
-function calculateLineWin(symbol, bet) {
-  return PAYOUTS[symbol] * bet;
-}
-
-function renderGrid(grid, winningCells=[]) {
+function renderGrid(grid, winningCells = []) {
   gridEl.innerHTML = "";
-  for (let r=0; r<grid.length; r++){
-    for (let c=0; c<grid[r].length; c++){
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
       const span = document.createElement("span");
       span.textContent = grid[r][c];
-      if (winningCells.some(([wr, wc]) => wr===r && wc===c)) {
+      if (winningCells.some(([wr, wc]) => wr === r && wc === c)) {
         span.classList.add("win");
       }
       gridEl.appendChild(span);
@@ -61,36 +18,38 @@ function renderGrid(grid, winningCells=[]) {
   }
 }
 
-spinBtn.addEventListener("click", () => {
+async function spinHandler() {
   const bet = Number(betInput.value);
-  if (bet <= 0 || bet > balance) {
-    messagesEl.textContent = "Invalid bet!";
+  if (bet <= 0) {
+    messagesEl.textContent = "Bet must be positive!";
     return;
   }
 
-  balance -= bet;
-  messagesEl.textContent = "";
-  
-  const grid = spinGrid();
-  let totalWin = 0;
-  const winningCells = [];
+  spinBtn.disabled = true;
 
-  PAYLINES.forEach((line, index) => {
-    const symbols = getPaylineSymbols(grid, line);
-    if (isWinningLine(symbols)) {
-      const win = calculateLineWin(symbols[0], bet);
-      totalWin += win;
-      line.forEach((row, col) => winningCells.push([row, col]));
+  try {
+    const res = await fetch("/spin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bet })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      messagesEl.textContent = data.error;
+      spinBtn.disabled = false;
+      return;
     }
-  });
 
-  balance += totalWin;
-  balanceEl.textContent = balance.toFixed(2);
-  renderGrid(grid, winningCells);
+    renderGrid(data.grid, data.paylines);
+    balanceEl.textContent = data.balance.toFixed(2);
+    messagesEl.textContent = data.win > 0 ? `🎉 You won ${data.win.toFixed(2)}!` : "No win 😢";
 
-  if(totalWin>0){
-    messagesEl.textContent = `🎉 You won ${totalWin.toFixed(2)}!`;
-  } else {
-    messagesEl.textContent = "No win this time 😢";
+  } catch (err) {
+    messagesEl.textContent = "Server error!";
   }
-});
+
+  spinBtn.disabled = false;
+}
+
+spinBtn.addEventListener("click", spinHandler);

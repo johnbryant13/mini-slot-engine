@@ -1,12 +1,16 @@
 const { spinGrid } = require("./reels");
+const { calculateLineWin } = require("./payouts");
 const { PAYLINES } = require("./paylines");
-const { getSymbolsForPayline, isWinningLine } = require("./paylineEvaluator");
-const { calculateLineWin } = require("./payout");
 
-/**
- * Represents a player
- * In real casinos this would be server-side account info
- */
+// helper
+function getSymbolsForPayline(grid, payline) {
+  return payline.map(([row, col]) => grid[row][col]);
+}
+
+function isWinningLine(symbols) {
+  return symbols.every(s => s === symbols[0]);
+}
+
 class Player {
   constructor(balance = 100) {
     this.balance = balance;
@@ -24,45 +28,29 @@ class Player {
   }
 }
 
-/**
- * Spins the slot machine for a player
- */
 function spin(player, bet) {
   const actualBet = player.placeBet(bet);
   const grid = spinGrid();
 
-  console.log("Spin result:");
-  grid.forEach(row => console.log(row.join(" | ")));
-
   let totalWin = 0;
+  const winningCells = [];
 
-  PAYLINES.forEach((payline, index) => {
-    const symbols = getSymbolsForPayline(grid, payline);
-
+  PAYLINES.forEach(line => {
+    const symbols = getSymbolsForPayline(grid, line);
     if (isWinningLine(symbols)) {
-      const win = calculateLineWin(symbols[0], actualBet);
-      totalWin += win;
-
-      console.log(
-        `✔ Payline ${index + 1} WIN: ${symbols.join(" | ")} → ${win}`
-      );
+      totalWin += calculateLineWin(symbols[0], actualBet);
+      line.forEach(([row, col]) => winningCells.push([row, col]));
     }
   });
 
-  if (totalWin > 0) {
-    player.addWin(totalWin);
-  }
+  if (totalWin > 0) player.addWin(totalWin);
 
   return {
-    grid,
-    bet: actualBet,
+    grid,             // ✅ must be 2D array
     win: totalWin,
-    balance: player.balance
+    balance: player.balance,
+    paylines: winningCells // ✅ array of [row,col]
   };
 }
 
-
-module.exports = {
-  Player,
-  spin,
-};
+module.exports = { Player, spin };

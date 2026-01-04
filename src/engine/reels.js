@@ -1,18 +1,17 @@
-const { SYMBOL_POOL } = require("./symbols");
+const SYMBOL_POOL = ["CHERRY", "LEMON", "BAR"]; // simple pool, can add weights later
 
 function spinGrid(rows = 3, reels = 3) {
   const grid = [];
-  for (let row = 0; row < rows; row++) {
-    const rowSymbols = [];
-    for (let reel = 0; reel < reels; reel++) {
+  for (let r = 0; r < rows; r++) {
+    const row = [];
+    for (let c = 0; c < reels; c++) {
       const randomIndex = Math.floor(Math.random() * SYMBOL_POOL.length);
-      rowSymbols.push(SYMBOL_POOL[randomIndex]);
+      row.push(SYMBOL_POOL[randomIndex]);
     }
-    grid.push(rowSymbols);
+    grid.push(row);
   }
-  return grid;
+  return grid; // must return a 2D array
 }
 
-module.exports = {
-  spinGrid
-};
+module.exports = { spinGrid, SYMBOL_POOL };
+    
