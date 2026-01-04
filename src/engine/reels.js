@@ -1,40 +1,34 @@
-// src/engine/reels.js
+const { SYMBOLS } = require("./symbols");
 
-const { getRandomInt } = require("./rng");
+const SYMBOL_VALUES = Object.values(SYMBOLS);
 
-/**
- * Define available symbols
- * In real slots, symbol frequency matters
- */
-const SYMBOLS = {
-  CHERRY: "CHERRY",
-  LEMON: "LEMON",
-  BAR: "BAR",
-};
-
-/**
- * Each reel is an array of symbols.
- * More entries = higher probability.
- */
-const REELS = [
-  [SYMBOLS.CHERRY, SYMBOLS.CHERRY, SYMBOLS.LEMON, SYMBOLS.BAR],
-  [SYMBOLS.CHERRY, SYMBOLS.LEMON, SYMBOLS.CHERRY, SYMBOLS.BAR],
-  [SYMBOLS.CHERRY, SYMBOLS.LEMON, SYMBOLS.BAR, SYMBOLS.CHERRY],
-];
-
-
-
-/**
- * Spins all reels and returns the result
- */
+// OLD (kept temporarily)
 function spinReels() {
-  return REELS.map((reel) => {
-    const index = getRandomInt(0, reel.length);
-    return reel[index];
-  });
+  return [
+    SYMBOL_VALUES[Math.floor(Math.random() * SYMBOL_VALUES.length)],
+    SYMBOL_VALUES[Math.floor(Math.random() * SYMBOL_VALUES.length)],
+    SYMBOL_VALUES[Math.floor(Math.random() * SYMBOL_VALUES.length)],
+  ];
+}
+
+// NEW: 3x3 grid
+function spinGrid(rows = 3, reels = 3) {
+  const grid = [];
+
+  for (let row = 0; row < rows; row++) {
+    const rowSymbols = [];
+    for (let reel = 0; reel < reels; reel++) {
+      const randomSymbol =
+        SYMBOL_VALUES[Math.floor(Math.random() * SYMBOL_VALUES.length)];
+      rowSymbols.push(randomSymbol);
+    }
+    grid.push(rowSymbols);
+  }
+
+  return grid;
 }
 
 module.exports = {
   spinReels,
-  SYMBOLS,
+  spinGrid
 };

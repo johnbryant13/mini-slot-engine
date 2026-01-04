@@ -1,48 +1,71 @@
-const readline = require("readline-sync");
+const readline = require("readline");
 const { Player, spin } = require("./engine/gameEngine");
+const { simulateRTP } = require("./engine/simulator");
 
-// Create a player with starting balance
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
 const player = new Player(100);
 
 console.log("🎰 Welcome to Mini Slot Machine!");
 console.log("Type 'q' to quit.\n");
 
-while (true) {
+rl.question("Enter bet amount (or 'q' to quit, 's' to simulate RTP): ", (input) => {
+  if (input.toLowerCase() === "q") {
+    rl.close();
+    return;
+  }
+
+  if (input.toLowerCase() === "s") {
+    simulateRTP(100000, 1);
+    return askBet();
+  }
+
+  const bet = Number(input);
+  if (isNaN(bet)) {
+    console.log("Invalid bet\n");
+    return askBet();
+  }
+
+  try {
+    spin(player, bet);
+  } catch (err) {
+    console.error(err.message);
+  }
+
+  console.log("");
+  askBet();
+});
+
+
+
+function askBet() {
   console.log(`Balance: ${player.balance.toFixed(2)}`);
+  rl.question("Enter bet amount (or 'q' to quit): ", (input) => {
+    if (input.toLowerCase() === "q") {
+      rl.close();
+      return;
+    }
 
-  // Ask for bet
-  let input = readline.question("Enter bet amount (or 'q' to quit): ");
-  if (input.toLowerCase() === "q") break;
+    const bet = Number(input);
+    if (isNaN(bet)) {
+      console.log("Invalid bet\n");
+      return askBet();
+    }
 
-  const bet = parseFloat(input);
-  if (isNaN(bet) || bet <= 0) {
-    console.log("❌ Invalid bet. Try again.\n");
-    continue;
-  }
+    try {
+      spin(player, bet);
+    } catch (err) {
+      console.error(err.message);
+    }
 
-  if (bet > player.balance) {
-    console.log("❌ Insufficient balance. Try again.\n");
-    continue;
-  }
-
-  // Spin the slot
-  const result = spin(player, bet);
-
-  // Show symbols
-  console.log("Spun: " + result.symbols.join(" | "));
-  if (result.win > 0) {
-    console.log(`🎉 You won: ${result.win.toFixed(2)}!`);
-  } else {
-    console.log("No win this time. 😢");
-  }
-
-  console.log("---------------------------\n");
-
-  // Stop if player is broke
-  if (player.balance <= 0) {
-    console.log("💀 You are out of balance. Game over!");
-    break;
-  }
+    console.log("");
+    askBet();
+  });
 }
 
-console.log("Thanks for playing! Goodbye!");
+askBet();
+
+

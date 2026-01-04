@@ -1,7 +1,7 @@
-// src/engine/gameEngine.js
-
-const { spinReels } = require("./reels");
-const { calculatePayout } = require("./payout");
+const { spinGrid } = require("./reels");
+const { PAYLINES } = require("./paylines");
+const { getSymbolsForPayline, isWinningLine } = require("./paylineEvaluator");
+const { calculateLineWin } = require("./payout");
 
 /**
  * Represents a player
@@ -26,33 +26,41 @@ class Player {
 
 /**
  * Spins the slot machine for a player
- * @param {Player} player
- * @param {number} bet
- * @returns {object} spin result
  */
 function spin(player, bet) {
-  // 1. Validate and deduct bet
   const actualBet = player.placeBet(bet);
+  const grid = spinGrid();
 
-  // 2. Spin reels
-  const resultSymbols = spinReels();
+  console.log("Spin result:");
+  grid.forEach(row => console.log(row.join(" | ")));
 
-  // 3. Calculate payout
-  const win = calculatePayout(resultSymbols, actualBet);
+  let totalWin = 0;
 
-  // 4. Update balance
-  if (win > 0) {
-    player.addWin(win);
+  PAYLINES.forEach((payline, index) => {
+    const symbols = getSymbolsForPayline(grid, payline);
+
+    if (isWinningLine(symbols)) {
+      const win = calculateLineWin(symbols[0], actualBet);
+      totalWin += win;
+
+      console.log(
+        `✔ Payline ${index + 1} WIN: ${symbols.join(" | ")} → ${win}`
+      );
+    }
+  });
+
+  if (totalWin > 0) {
+    player.addWin(totalWin);
   }
 
-  // 5. Return full spin result
   return {
-    symbols: resultSymbols,
+    grid,
     bet: actualBet,
-    win,
-    balance: player.balance,
+    win: totalWin,
+    balance: player.balance
   };
 }
+
 
 module.exports = {
   Player,
